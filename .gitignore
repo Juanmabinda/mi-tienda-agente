@@ -1,0 +1,12 @@
+canchaya-fiscal
+canchaya-fiscal.exe
+canchaya-print
+canchaya-print-*
+token.txt
+config.yml
+.DS_Store
+*.log
+dist/
+.env
+.env.*
+!.env.example

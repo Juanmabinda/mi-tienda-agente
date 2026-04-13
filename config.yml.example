@@ -1,0 +1,21 @@
+# CanchaYa Fiscal Agent Configuration
+#
+# Copy to config.yml and fill in your values.
+
+# CanchaYa server
+server:
+  url: "wss://staging.canchaya.ar/cable"   # WebSocket endpoint
+  agent_token: "YOUR_AGENT_TOKEN_HERE"      # Token from admin → Facturación → Controladores fiscales
+
+# Fiscal printer (Hasar 2G)
+printer:
+  brand: "hasar"                            # hasar or epson
+  ip: "192.168.1.100"                       # Printer IP on local network
+  port: 7000                                # Default Hasar 2G port
+  timeout: 15                               # HTTP timeout in seconds
+
+# Agent
+agent:
+  reconnect_interval: 5                     # Seconds between reconnection attempts
+  heartbeat_interval: 60                    # Seconds between heartbeats
+  log_level: "info"                         # debug, info, warn, error
