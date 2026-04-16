@@ -17,14 +17,14 @@ jobs:
         run: brew install libusb
       - name: Build (arm64)
         run: |
-          CGO_ENABLED=1 GOARCH=arm64 go build -o canchaya-print-mac-arm64 .
+          CGO_ENABLED=1 GOARCH=arm64 go build -o mi-tienda-print-mac-arm64 .
       - name: Build (amd64)
         run: |
-          CGO_ENABLED=1 GOARCH=amd64 go build -o canchaya-print-mac-amd64 .
+          CGO_ENABLED=1 GOARCH=amd64 go build -o mi-tienda-print-mac-amd64 .
       - uses: actions/upload-artifact@v4
         with:
           name: mac-binaries
-          path: canchaya-print-mac-*
+          path: mi-tienda-print-mac-*
 
   build-linux:
     runs-on: ubuntu-latest
@@ -37,11 +37,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev
       - name: Build
         run: |
-          CGO_ENABLED=1 go build -o canchaya-print-linux .
+          CGO_ENABLED=1 go build -o mi-tienda-print-linux .
       - uses: actions/upload-artifact@v4
         with:
           name: linux-binary
-          path: canchaya-print-linux
+          path: mi-tienda-print-linux
 
   build-windows:
     runs-on: windows-latest
@@ -60,11 +60,11 @@ jobs:
           CGO_ENABLED: 1
           PKG_CONFIG_PATH: ${{ github.workspace }}\vcpkg\installed\x64-windows-static\lib\pkgconfig
         run: |
-          go build -o canchaya-print-windows.exe .
+          go build -o mi-tienda-print.exe .
       - uses: actions/upload-artifact@v4
         with:
           name: windows-binary
-          path: canchaya-print-windows.exe
+          path: mi-tienda-print.exe
 
   release:
     needs: [build-mac, build-linux, build-windows]
@@ -77,8 +77,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            mac-binaries/canchaya-print-mac-arm64
-            mac-binaries/canchaya-print-mac-amd64
-            linux-binary/canchaya-print-linux
-            windows-binary/canchaya-print-windows.exe
+            mac-binaries/mi-tienda-print-mac-arm64
+            mac-binaries/mi-tienda-print-mac-amd64
+            linux-binary/mi-tienda-print-linux
+            windows-binary/mi-tienda-print.exe
           generate_release_notes: true
