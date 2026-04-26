@@ -265,11 +265,20 @@ func (a *AgentV2) handlePrintJob(message map[string]interface{}, jobType string)
 	printerIDFloat, _ := message["printer_id"].(float64)
 	printerID := int(printerIDFloat)
 	invoiceID := message["invoice_id"]
+	jobID := message["job_id"]
+	printJobID := message["print_job_id"]
+	printerPublicID, _ := message["printer_public_id"].(string)
+
+	// ACK inmediato: avisa al server que recibimos el job antes de imprimir.
+	if jobID != nil || printJobID != nil {
+		a.sendAction("ack", map[string]interface{}{
+			"job_id":       jobID,
+			"print_job_id": printJobID,
+		})
+	}
 
 	driver := a.pool.Get(printerID)
 	if driver == nil {
-		// Printer might have been added from the UI after the agent started.
-		// Refresh the pool from the server and try again.
 		log.Printf("Impresora #%d desconocida; recargando configuracion...", printerID)
 		if err := a.refreshPool(); err != nil {
 			log.Printf("Error al recargar configuracion: %v", err)
@@ -279,27 +288,33 @@ func (a *AgentV2) handlePrintJob(message map[string]interface{}, jobType string)
 	if driver == nil {
 		log.Printf("Impresora #%d sigue sin estar en el pool tras recargar", printerID)
 		a.sendAction("print_error", map[string]interface{}{
-			"job_type":      jobType,
-			"printer_id":    printerID,
-			"invoice_id":    invoiceID,
-			"error_code":    "PRINTER_NOT_FOUND",
-			"error_message": fmt.Sprintf("Impresora #%d no esta configurada en este agente", printerID),
-			"retryable":     false,
+			"job_type":          jobType,
+			"job_id":            jobID,
+			"print_job_id":      printJobID,
+			"printer_id":        printerID,
+			"printer_public_id": printerPublicID,
+			"invoice_id":        invoiceID,
+			"error_code":        "PRINTER_NOT_FOUND",
+			"error_message":     fmt.Sprintf("Impresora #%d no esta configurada en este agente", printerID),
+			"retryable":         false,
 		})
 		return
 	}
 
-	log.Printf("Print job: type=%s printer=%d", jobType, printerID)
+	log.Printf("Print job: type=%s printer=%d job_id=%v", jobType, printerID, jobID)
 	result, err := driver.Print(message)
 	if err != nil {
 		log.Printf("Print error: %v", err)
 		a.sendAction("print_error", map[string]interface{}{
-			"job_type":      jobType,
-			"printer_id":    printerID,
-			"invoice_id":    invoiceID,
-			"error_code":    "PRINT_ERROR",
-			"error_message": err.Error(),
-			"retryable":     true,
+			"job_type":          jobType,
+			"job_id":            jobID,
+			"print_job_id":      printJobID,
+			"printer_id":        printerID,
+			"printer_public_id": printerPublicID,
+			"invoice_id":        invoiceID,
+			"error_code":        "PRINT_ERROR",
+			"error_message":     err.Error(),
+			"retryable":         true,
 		})
 		return
 	}
@@ -308,17 +323,23 @@ func (a *AgentV2) handlePrintJob(message map[string]interface{}, jobType string)
 		fiscalNumber := fmt.Sprintf("%05v-%08v", result["point_of_sale"], result["fiscal_number"])
 		log.Printf("Fiscal printed: %s CAE=%v", fiscalNumber, result["cae"])
 		a.sendAction("print_result", map[string]interface{}{
-			"job_type":         "fiscal",
-			"printer_id":       printerID,
-			"invoice_id":       invoiceID,
-			"fiscal_number":    fiscalNumber,
-			"printer_response": result,
+			"job_type":          "fiscal",
+			"job_id":            jobID,
+			"print_job_id":      printJobID,
+			"printer_id":        printerID,
+			"printer_public_id": printerPublicID,
+			"invoice_id":        invoiceID,
+			"fiscal_number":     fiscalNumber,
+			"printer_response":  result,
 		})
 	} else {
 		log.Printf("Comanda printed on printer #%d", printerID)
 		a.sendAction("print_result", map[string]interface{}{
-			"job_type":   "comanda",
-			"printer_id": printerID,
+			"job_type":          "comanda",
+			"job_id":            jobID,
+			"print_job_id":      printJobID,
+			"printer_id":        printerID,
+			"printer_public_id": printerPublicID,
 		})
 	}
 }

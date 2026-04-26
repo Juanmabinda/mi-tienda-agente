@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"net"
 	"strings"
 	"time"
@@ -404,7 +405,7 @@ func buildStandardComanda(buf *bytes.Buffer, job map[string]interface{}, comanda
 			subtotal := getFloat(item, "subtotal", 0)
 
 			desc := fmt.Sprintf("%dx %s", int(qty), name)
-			price := fmt.Sprintf("$%s", formatNumber(int(subtotal)))
+			price := fmt.Sprintf("$%s", formatMoney(subtotal))
 			padding := charsPerLine - len(desc) - len(price)
 			if padding < 1 {
 				padding = 1
@@ -420,9 +421,48 @@ func buildStandardComanda(buf *bytes.Buffer, job map[string]interface{}, comanda
 		buf.WriteString(strings.Repeat("-", charsPerLine))
 		buf.Write(escNewLine)
 
+		// Subtotal + adjustments (promos / payment discounts)
+		adjustments, _ := comanda["adjustments"].([]interface{})
+		if len(adjustments) > 0 {
+			subtotal := getFloat(comanda, "subtotal", 0)
+			subtotalStr := fmt.Sprintf("$%s", formatMoney(subtotal))
+			label := "Subtotal"
+			pad := charsPerLine - len(label) - len(subtotalStr)
+			if pad < 1 {
+				pad = 1
+			}
+			buf.WriteString(label)
+			buf.WriteString(strings.Repeat(" ", pad))
+			buf.WriteString(subtotalStr)
+			buf.Write(escNewLine)
+
+			for _, raw := range adjustments {
+				adj, ok := raw.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				adjLabel, _ := adj["label"].(string)
+				adjAmount := getFloat(adj, "amount", 0)
+				if adjLabel == "" {
+					continue
+				}
+				adjStr := fmt.Sprintf("-$%s", formatMoney(adjAmount))
+				pad := charsPerLine - len(adjLabel) - len(adjStr)
+				if pad < 1 {
+					pad = 1
+				}
+				buf.WriteString(adjLabel)
+				buf.WriteString(strings.Repeat(" ", pad))
+				buf.WriteString(adjStr)
+				buf.Write(escNewLine)
+			}
+			buf.WriteString(strings.Repeat("-", charsPerLine))
+			buf.Write(escNewLine)
+		}
+
 		total := comanda["total"]
 		if total != nil {
-			totalStr := fmt.Sprintf("$%s", formatNumber(int(getFloat(comanda, "total", 0))))
+			totalStr := fmt.Sprintf("$%s", formatMoney(getFloat(comanda, "total", 0)))
 			label := "TOTAL"
 			pad := charsPerLine - len(label) - len(totalStr)
 			if pad < 1 {
@@ -476,4 +516,19 @@ func formatNumber(n int) string {
 		result = append(result, byte(c))
 	}
 	return string(result)
+}
+
+// formatMoney renderea un valor con centavos (si los tiene).
+//
+//	5000.0  -> "5.000"
+//	5000.5  -> "5.000,50"
+//	0.5     -> "0,50"
+func formatMoney(f float64) string {
+	rounded := math.Round(math.Abs(f)*100) / 100
+	intPart := int(math.Floor(rounded))
+	centavos := int(math.Round((rounded - float64(intPart)) * 100))
+	if centavos == 0 {
+		return formatNumber(intPart)
+	}
+	return fmt.Sprintf("%s,%02d", formatNumber(intPart), centavos)
 }

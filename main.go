@@ -20,7 +20,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const version = "0.5.0"
+const version = "0.9.0"
 const defaultServer = "https://mitienda.app"
 
 // Pairing alphabet — uppercase, no ambiguous chars (no 0/O, 1/I/L)
@@ -63,6 +63,17 @@ func main() {
 	fmt.Println("   Mi Tienda Print Agent v" + version)
 	fmt.Println("======================================")
 	fmt.Println()
+
+	if err := acquireSingleInstanceLock(); err != nil {
+		fmt.Println("==========================================================")
+		fmt.Println(" ⚠  Ya hay otro agente Mi Tienda Print corriendo.")
+		fmt.Println("    Dos instancias simultaneas causan desconexiones en loop.")
+		fmt.Println("    Cerra la otra y volve a abrir.")
+		fmt.Println("==========================================================")
+		fmt.Println()
+		log.Printf("lock error: %v", err)
+		waitAndExit(1)
+	}
 
 	serverURL := findServerURL()
 	log.Printf("Server: %s", serverURL)
