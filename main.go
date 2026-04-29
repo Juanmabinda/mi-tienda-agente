@@ -21,7 +21,11 @@ import (
 )
 
 const version = "0.9.0"
-const defaultServer = "https://mitienda.app"
+// Default server: este binario sirve a CanchaYa exclusivamente. NO mezclar
+// URLs ni env vars con otros proyectos (Mi Tienda u otros). Si en algun
+// momento se forka para otro producto, hacer un fork del repo, NO cambiar
+// constantes aca. Mantener el branding y el endpoint coherentes.
+const defaultServer = "https://canchaya.ar"
 
 // Pairing alphabet — uppercase, no ambiguous chars (no 0/O, 1/I/L)
 const pairingAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -367,13 +371,9 @@ func tokenFilePaths() []string {
 }
 
 func findServerURL() string {
-	// CANCHAYA_URL: nombre que usa el wrapper Tauri canchaya-desktop. Tiene
-	// prioridad para que builds nuevos del agente sigan funcionando con
-	// wrappers existentes en clientes (no-OTA-update del wrapper).
+	// Solo CANCHAYA_URL. Este binario es del proyecto CanchaYa — no
+	// reusar env vars de otros productos para evitar configs mezcladas.
 	if v := os.Getenv("CANCHAYA_URL"); v != "" {
-		return v
-	}
-	if v := os.Getenv("MI_TIENDA_URL"); v != "" {
 		return v
 	}
 	return defaultServer
