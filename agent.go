@@ -182,7 +182,7 @@ func (a *AgentV2) connect() error {
 		return fmt.Errorf("dial: %w", err)
 	}
 	a.conn = conn
-	log.Println("Connected to Mi Tienda")
+	log.Println("Connected to CanchaYa")
 	a.subscribe()
 
 	// Discover and report all connected devices (USB + LAN)

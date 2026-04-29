@@ -64,13 +64,13 @@ func (c *RemoteConfig) IsV2() bool {
 func main() {
 	handleInstall()
 	fmt.Println("======================================")
-	fmt.Println("   Mi Tienda Print Agent v" + version)
+	fmt.Println("   CanchaYa Print Agent v" + version)
 	fmt.Println("======================================")
 	fmt.Println()
 
 	if err := acquireSingleInstanceLock(); err != nil {
 		fmt.Println("==========================================================")
-		fmt.Println(" ⚠  Ya hay otro agente Mi Tienda Print corriendo.")
+		fmt.Println(" ⚠  Ya hay otro agente CanchaYa Print corriendo.")
 		fmt.Println("    Dos instancias simultaneas causan desconexiones en loop.")
 		fmt.Println("    Cerra la otra y volve a abrir.")
 		fmt.Println("==========================================================")
@@ -94,7 +94,7 @@ func main() {
 		log.Printf("Token: %s...%s", token[:8], token[len(token)-4:])
 	}
 
-	log.Println("Conectando con Mi Tienda...")
+	log.Println("Conectando con CanchaYa...")
 	config, err := fetchConfigV2OrV1(serverURL, token)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err)
@@ -175,7 +175,7 @@ func doPairing(serverURL string) string {
 	code := generatePairingCode()
 
 	if err := registerPairingCode(serverURL, code, hostname); err != nil {
-		fmt.Printf("\nNo se pudo contactar a Mi Tienda: %v\n", err)
+		fmt.Printf("\nNo se pudo contactar a CanchaYa: %v\n", err)
 		fmt.Println("Verifica tu conexion a internet e intenta de nuevo.")
 		waitAndExit(1)
 	}
@@ -250,11 +250,11 @@ func printPairingCode(code string) {
 	fmt.Println("   CONECTAR ESTE AGENTE A TU CLUB")
 	fmt.Println(bar)
 	fmt.Println()
-	fmt.Println("   Ingresa este codigo en Mi Tienda:")
+	fmt.Println("   Ingresa este codigo en CanchaYa:")
 	fmt.Println()
 	fmt.Println("                  " + code)
 	fmt.Println()
-	fmt.Println("   1. Abri mitienda.app")
+	fmt.Println("   1. Abri canchaya.ar")
 	fmt.Println("   2. Configuracion -> Impresoras")
 	fmt.Println("   3. Pega el codigo en \"Conectar agente\"")
 	fmt.Println()
