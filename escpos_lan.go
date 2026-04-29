@@ -393,6 +393,13 @@ func buildStandardComanda(buf *bytes.Buffer, job map[string]interface{}, comanda
 			buf.WriteString(fmt.Sprintf("%dx %s", int(qty), name))
 			buf.Write(escDoubleOff)
 			buf.Write(escNewLine)
+			// Nota por item (ej: "sin queso"). Crítica para cocina, la
+			// imprimimos en negrita para que no pase desapercibida.
+			if note, _ := item["notes"].(string); strings.TrimSpace(note) != "" {
+				buf.Write(escBoldOn)
+				writeWrappedLines(buf, "  > "+strings.TrimSpace(note), charsPerLine)
+				buf.Write(escBoldOff)
+			}
 		}
 	} else {
 		for _, raw := range items {
@@ -416,6 +423,10 @@ func buildStandardComanda(buf *bytes.Buffer, job map[string]interface{}, comanda
 			buf.WriteString(strings.Repeat(" ", padding))
 			buf.WriteString(price)
 			buf.Write(escNewLine)
+			// Nota por item — bajo el producto, indentada.
+			if note, _ := item["notes"].(string); strings.TrimSpace(note) != "" {
+				writeWrappedLines(buf, "  > "+strings.TrimSpace(note), charsPerLine)
+			}
 		}
 
 		buf.WriteString(strings.Repeat("-", charsPerLine))
@@ -486,6 +497,19 @@ func buildStandardComanda(buf *bytes.Buffer, job map[string]interface{}, comanda
 	buf.WriteString(strings.Repeat("-", charsPerLine))
 	buf.Write(escNewLine)
 
+	// Nota general de la comanda (ej: "para Juan, mesa 3"). Va antes del
+	// footer/aviso fiscal para que cocina/cajero la vean junto a los items.
+	if note, _ := comanda["notes"].(string); strings.TrimSpace(note) != "" {
+		buf.Write(escLeft)
+		buf.Write(escBoldOn)
+		buf.WriteString("Nota:")
+		buf.Write(escBoldOff)
+		buf.Write(escNewLine)
+		writeWrappedLines(buf, strings.TrimSpace(note), charsPerLine)
+		buf.WriteString(strings.Repeat("-", charsPerLine))
+		buf.Write(escNewLine)
+	}
+
 	if footer != "" {
 		buf.Write(escCenter)
 		for _, line := range strings.Split(footer, "\n") {
@@ -499,6 +523,36 @@ func buildStandardComanda(buf *bytes.Buffer, job map[string]interface{}, comanda
 		buf.Write(escCenter)
 		buf.Write(escNewLine)
 		buf.WriteString("No valido como factura")
+		buf.Write(escNewLine)
+	}
+}
+
+// writeWrappedLines parte un texto en líneas de hasta charsPerLine,
+// respetando palabras cuando se puede, y emite cada línea seguida de \n.
+// Usado para notas (per-item y generales) en comandas térmicas.
+func writeWrappedLines(buf *bytes.Buffer, text string, charsPerLine int) {
+	if charsPerLine <= 0 {
+		buf.WriteString(text)
+		buf.Write(escNewLine)
+		return
+	}
+	for _, raw := range strings.Split(text, "\n") {
+		line := strings.TrimRight(raw, " ")
+		if line == "" {
+			buf.Write(escNewLine)
+			continue
+		}
+		for len(line) > charsPerLine {
+			cut := charsPerLine
+			// Intentar cortar en el último espacio para no romper palabras.
+			if sp := strings.LastIndex(line[:charsPerLine], " "); sp > charsPerLine/2 {
+				cut = sp
+			}
+			buf.WriteString(line[:cut])
+			buf.Write(escNewLine)
+			line = strings.TrimLeft(line[cut:], " ")
+		}
+		buf.WriteString(line)
 		buf.Write(escNewLine)
 	}
 }
