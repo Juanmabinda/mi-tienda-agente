@@ -367,6 +367,12 @@ func tokenFilePaths() []string {
 }
 
 func findServerURL() string {
+	// CANCHAYA_URL: nombre que usa el wrapper Tauri canchaya-desktop. Tiene
+	// prioridad para que builds nuevos del agente sigan funcionando con
+	// wrappers existentes en clientes (no-OTA-update del wrapper).
+	if v := os.Getenv("CANCHAYA_URL"); v != "" {
+		return v
+	}
 	if v := os.Getenv("MI_TIENDA_URL"); v != "" {
 		return v
 	}
