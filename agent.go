@@ -177,7 +177,11 @@ func (a *AgentV2) connect() error {
 	u.RawQuery = q.Encode()
 
 	log.Printf("Connecting to %s...", a.websocketURL)
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	// HandshakeTimeout 15s — sin esto, tras un deploy de Rails el dialer
+	// puede colgar indefinidamente y el loop de Run() nunca reintenta.
+	dialer := *websocket.DefaultDialer
+	dialer.HandshakeTimeout = 15 * time.Second
+	conn, _, err := dialer.Dial(u.String(), nil)
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
 	}
@@ -258,6 +262,16 @@ func (a *AgentV2) handleMessage(raw []byte) {
 		a.handlePrintJob(message, "comanda")
 	case "test.print.request":
 		a.handleTestPrint(message)
+	case "agent.reconnect_request":
+		// Server pidió que nos desconectemos+reconectemos limpio. Útil cuando
+		// el agente está vivo pero medio zombi (procesando lento, WS half-open
+		// que nuestro readDeadline tarda en detectar). Cerramos la conexión;
+		// el read loop devuelve error → connect() returna → Run() reintenta
+		// en 5s con WS fresca.
+		log.Printf("Reconnect requested by server (reason=%v)", message["reason"])
+		if a.conn != nil {
+			a.conn.Close()
+		}
 	}
 }
 
